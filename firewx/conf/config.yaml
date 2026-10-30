@@ -1,0 +1,40 @@
+# ======================================================
+# CONFIG for non-dataset specific configuration options
+# ======================================================
+
+# ------------------------------------------
+# General IO
+# ------------------------------------------
+
+path_to_cffdrs-ng: "/path/to/cffdrs-ng"
+output_directory: "/path/to/output"
+lazy_load_data: true
+
+# ------------------------------------------
+# General dataset and location information
+# ------------------------------------------
+
+dataset_name: "era5"
+year: 2025
+latitude: 48.2
+longitude: -123.1
+output_vars:
+  - "MASK"
+  - "WS"
+  - "FWI"
+  - "BUI"
+
+# ------------------------------------------
+# FWI calculation & overwintering
+# ------------------------------------------
+
+FFMC_default: 85.0
+DMC_default: 6.0
+DC_default: 15.0
+season_consecutive_days: 3
+season_start_temp: 12.0
+season_stop_temp: 5.0
+
+overwinter: false
+carry_over_fraction: 1.0
+wetting_efficiency_fraction: 0.75

@@ -1,0 +1,46 @@
+# ======================================================
+# CONFIG for dataset-specific configuration options
+# ======================================================
+
+
+# ------------------------------------------
+# Dataset dimensions
+# ------------------------------------------
+
+time_coordinate_name: "time"
+longitude_coordinate_name: "longitude"
+latitude_coordinate_name: "latitude"
+longitude_convention: [-180, 180]
+
+
+# ------------------------------------------
+# Weather variables
+# ------------------------------------------
+
+10m_wind_speed:
+
+  path: "/path/to/winds.nc"
+  alternative_names: ['WS10', 'WindSpeed', 'WindSpeed10m','WS','ws','ws10','sfcWind','SFCWIND']
+  units: "m/s"
+  transform: null
+
+2m_air_temperature:
+
+  path: "/path/to/air_temperature.nc"
+  alternative_names: ['T2', 'Temperature', 'T', 'Temp', 'temp', 'temperature', 'air_temperature', 'TAS', 'tas']
+  units: "K"
+  transform: null
+
+2m_relative_humidity:
+
+  path: "/path/to/relative_humidity.nc"
+  alternative_names: ["RH", "RH2", "relative_humidity_2m", "RH2M", "rh", "rh2"]
+  units: "%"
+  transform: null
+
+1hr_precip_accumulation:
+
+  path: "/path/to/precip_accum.nc"
+  alternative_names: ["Precip", "Pr", "total_precipitation", "PREC", "prec", "pr", "rainfall", "Rainfall"]
+  units: "mm"
+  transform: null
