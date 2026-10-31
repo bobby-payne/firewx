@@ -4,7 +4,7 @@ from pathlib import Path
 
 class Config:
     def __init__(self, relative_path="conf/config.yaml"):
-        # Resolve path relativto this file, not the working directory
+        # Resolve path relative to this file, not the working directory
         base_dir = Path(__file__).resolve().parent
         config_path = (base_dir / relative_path).resolve()
 
@@ -48,7 +48,6 @@ def get_data_config(general_config):
 def get_config(relative_path="conf/config.yaml"):
     global _config_instance
     if _config_instance is None:
-        # combine and return the general and data-specific configurations into a single config file
         general_config = get_general_config(relative_path)
         data_config = get_data_config(general_config)
         combined_config = Config()
