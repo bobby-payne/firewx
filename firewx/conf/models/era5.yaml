@@ -4,14 +4,19 @@
 
 
 # ------------------------------------------
-# Dataset dimensions
+# Dataset coordinates
 # ------------------------------------------
 
 time_coordinate_name: "time"
 longitude_coordinate_name: "longitude"
 latitude_coordinate_name: "latitude"
-longitude_convention: [-180, 180]
 
+# ------------------------------------------
+# Conventions
+# ------------------------------------------
+
+longitude_convention: [-180, 180]       # choose from [-180, 180] or [0, 360]
+timezone: "UTC"                         # choose from: "UTC", "LST"
 
 # ------------------------------------------
 # Weather variables
@@ -19,28 +24,28 @@ longitude_convention: [-180, 180]
 
 wind_speed_10m:
 
-  path: "/path/to/winds.nc"
-  alternative_names: ['WS10', 'WindSpeed', 'WindSpeed10m','WS','ws','ws10','sfcWind','SFCWIND']
-  units: "m/s"
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/source/sfcWind_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc"
+  variable_name: 'sfcWind'
+  units: "m/s"        # choose from: "m/s", "km/h", "mph", "kts"
   transform: null
 
 air_temperature_2m:
 
-  path: "/path/to/air_temperature.nc"
-  alternative_names: ['T2', 'Temperature', 'T', 'Temp', 'temp', 'temperature', 'air_temperature', 'TAS', 'tas']
-  units: "K"
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/source/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc"
+  variable_name: 'tas'
+  units: "K"          # choose from: "K", "C", "F"
   transform: null
 
 relative_humidity_2m:
 
-  path: "/path/to/relative_humidity.nc"
-  alternative_names: ["RH", "RH2", "relative_humidity_2m", "RH2M", "rh", "rh2"]
-  units: "%"
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/RH/*.nc"
+  variable_name: 'rh'
+  units: "%"          # choose from: "%" or null
   transform: null
 
 precip_accumulation_1hr:
 
-  path: "/path/to/precip_accum.nc"
-  alternative_names: ["Precip", "Pr", "total_precipitation", "PREC", "prec", "pr", "rainfall", "Rainfall"]
-  units: "mm"
-  transform: null
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/PREC/merged/PREC_198001_201812.nc"
+  variable_name: 'pr'
+  units: "mm"         # choose from: "mm", "cm", "in"
+  transform: "x * 3600"
