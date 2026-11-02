@@ -1,7 +1,36 @@
 
-def select_nearest_gridpoint(config, dataset, lat, lon):
+import logging
+from haversine import haversine
+
+
+def select_time_range(config, dataset):
     """
-    Select the nearest grid point in the dataset to the specified latitude and longitude.
+    Select the time range from the dataset based on the start and final year specified in the config.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing start and final year.
+    dataset : xarray.Dataset
+        The dataset containing the time dimension.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset restricted to the specified time range.
+    """
+    start_year = config.start_year
+    final_year = config.final_year
+
+    if start_year < dataset.time.dt.year.min().item() or final_year > dataset.time.dt.year.max().item():
+        logging.warning("Specified start_year or final_year falls outside the dataset's time range. Is this intended?")
+
+    return dataset.sel(time=slice(f"{start_year}-01-01", f"{final_year}-12-31"))
+
+
+def select_nearest_gridpoint(config, dataset):
+    """
+    Select the nearest grid point in the dataset to the latitude and longitude specified in config.
 
     Parameters
     ----------
@@ -9,10 +38,6 @@ def select_nearest_gridpoint(config, dataset, lat, lon):
         The configuration dictionary containing grid specifications.
     dataset : xarray.Dataset
         The dataset containing the grid points.
-    lat : float
-        The latitude of the target location.
-    lon : float
-        The longitude of the target location.
 
     Returns
     -------
@@ -21,14 +46,57 @@ def select_nearest_gridpoint(config, dataset, lat, lon):
     """
     lat_name = config.latitude_coordinate_name
     lon_name = config.longitude_coordinate_name
-    nearest_lat = dataset[lat_name].sel({lat_name: lat}, method='nearest')
-    nearest_lon = dataset[lon_name].sel({lon_name: lon}, method='nearest')
+    target_lat = config.latitude
+    target_lon = config.longitude
+
+    nearest_lat = dataset[lat_name].sel({lat_name: target_lat}, method='nearest').item()
+    nearest_lon = dataset[lon_name].sel({lon_name: target_lon}, method='nearest').item()
+
+    distance = haversine((target_lat, target_lon), (nearest_lat, nearest_lon), unit='deg')
+    if abs(distance) > 1:
+        logging.warning(
+            "Nearest grid point to specified latitude and longitude is more than 1° away. Is this intended?"
+            )
+
     return dataset.sel({lat_name: nearest_lat, lon_name: nearest_lon})
 
 
-def convert_longitude_range(config, dataset, to_centered: bool = True):
+def convert_longitude_range(longitude, to_centered: bool = True):
     """
-    Converts longitude range between [0,360) and [-180,180).
+    Converts longitude float between ranges [0,360) and [-180,180).
+    
+    If "to_centered=True", converts the longitude from the [0,360) convention
+    to the standard [-180,180) convention, required for timezone retrieval
+    and by the cffdrs FWI calculation function.
+
+    If "to_centered=False", converts the longitude from the [-180,180) convention
+    to the [0,360) convention.
+
+    Parameters
+    ----------
+    longitude : float
+        The longitude value to convert.
+    to_centered : bool, optional
+        If True, convert from [0,360) to [-180,180).
+        If False, convert from [-180,180) to [0,360).
+        Default is True
+
+    Returns
+    -------
+    float
+        The converted longitude value.
+    """
+
+    if to_centered:
+        longitude = ((longitude + 180.) % 360.) - 180.
+    else:
+        longitude = longitude % 360.
+    return longitude
+
+
+def convert_dataset_longitude_range(config, dataset, to_centered: bool = True):
+    """
+    Converts longitude range of an xarray.Dataset between [0,360) and [-180,180).
     
     If "to_centered=True", converts the longitude coordinate from the [0,360) convention
     to the standard [-180,180) convention, required for timezone retrieval
@@ -39,7 +107,7 @@ def convert_longitude_range(config, dataset, to_centered: bool = True):
 
     Parameters
     ----------
-    dataset : xr.Dataset
+    dataset : xarray.Dataset
         The dataset containing the longitude coordinate.
     to_centered : bool, optional
         If True, convert from [0,360) to [-180,180).
@@ -48,19 +116,14 @@ def convert_longitude_range(config, dataset, to_centered: bool = True):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         The dataset containing the longitude coordinate.
     """
 
     longitude_name = config.longitude_coordinate_name
-    if to_centered:
-        dataset = dataset.assign_coords({
-            longitude_name: (((dataset[longitude_name] + 180.) % 360.) - 180.)
-        })
-    else:
-        dataset = dataset.assign_coords({
-            longitude_name: (dataset[longitude_name] % 360.)
-        })
+    dataset = dataset.assign_coords({
+        longitude_name: convert_longitude_range(dataset[longitude_name], to_centered=to_centered)
+    })
 
     return dataset
 
