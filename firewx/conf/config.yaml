@@ -17,7 +17,7 @@ lazy_load_data: true
 dataset_name: "era5"
 year: 2009
 latitude: 48.2
-longitude: -123.1
+longitude: 236.64             # must be consistent with longitude range defined in [dataset].yaml
 output_frequency: "hourly"    # choose from ["hourly", "daily"]
 output_vars:                  # see valid_output_variables.txt
   - "MASK"

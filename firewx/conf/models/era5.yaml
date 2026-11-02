@@ -15,7 +15,7 @@ latitude_coordinate_name: "latitude"
 # Conventions
 # ------------------------------------------
 
-longitude_convention: [-180, 180]       # choose from [-180, 180] or [0, 360]
+longitude_convention: [0, 360]          # choose from [-180, 180] or [0, 360]
 timezone: "UTC"                         # choose from: "UTC", "LST"
 
 # ------------------------------------------

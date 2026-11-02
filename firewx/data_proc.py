@@ -1,4 +1,70 @@
 
+def select_nearest_gridpoint(config, dataset, lat, lon):
+    """
+    Select the nearest grid point in the dataset to the specified latitude and longitude.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing grid specifications.
+    dataset : xarray.Dataset
+        The dataset containing the grid points.
+    lat : float
+        The latitude of the target location.
+    lon : float
+        The longitude of the target location.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset corresponding to the nearest grid point.
+    """
+    lat_name = config.latitude_coordinate_name
+    lon_name = config.longitude_coordinate_name
+    nearest_lat = dataset[lat_name].sel({lat_name: lat}, method='nearest')
+    nearest_lon = dataset[lon_name].sel({lon_name: lon}, method='nearest')
+    return dataset.sel({lat_name: nearest_lat, lon_name: nearest_lon})
+
+
+def convert_longitude_range(config, dataset, to_centered: bool = True):
+    """
+    Converts longitude range between [0,360) and [-180,180).
+    
+    If "to_centered=True", converts the longitude coordinate from the [0,360) convention
+    to the standard [-180,180) convention, required for timezone retrieval
+    and by the cffdrs FWI calculation function.
+
+    If "to_centered=False", converts the longitude coordinate from the [-180,180) convention
+    to the [0,360) convention.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        The dataset containing the longitude coordinate.
+    to_centered : bool, optional
+        If True, convert from [0,360) to [-180,180).
+        If False, convert from [-180,180) to [0,360).
+        Default is True
+
+    Returns
+    -------
+    xr.Dataset
+        The dataset containing the longitude coordinate.
+    """
+
+    longitude_name = config.longitude_coordinate_name
+    if to_centered:
+        dataset = dataset.assign_coords({
+            longitude_name: (((dataset[longitude_name] + 180.) % 360.) - 180.)
+        })
+    else:
+        dataset = dataset.assign_coords({
+            longitude_name: (dataset[longitude_name] % 360.)
+        })
+
+    return dataset
+
+
 def apply_transform(config, variable, dataset):
     """
     Transform the specified variable in the dataset by applying a mathematical operation.
@@ -33,6 +99,23 @@ def apply_transform(config, variable, dataset):
 
 
 def apply_unit_conversion(config, variable, dataset):
+    """
+    Apply unit conversions to the specified variable in the dataset based on the configuration.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing unit specifications.
+    variable : str
+        The name of the variable to convert.
+    dataset : xarray.Dataset
+        The dataset containing the weather variable to be converted.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with the variable converted to the desired units.
+    """
 
     if variable == "wind_speed_10m":
         variable_name = config.wind_speed_10m["variable_name"]
