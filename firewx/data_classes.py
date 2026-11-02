@@ -1,6 +1,4 @@
 
-from torch import mm
-
 from .data_io import get_wx_data
 from .data_proc import (
     select_nearest_gridpoint,
