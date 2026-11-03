@@ -11,13 +11,17 @@ def get_wx_data(config) -> dict:
         dict[str, xr.DataArray]: Dictionary containing weather data.
     """
     if config.lazy_load_data:
+
+        chunks = config.chunks
         return {
-            "wind_speed_10m": xr.open_mfdataset(config.wind_speed_10m['path'], chunks={}),
-            "air_temperature_2m": xr.open_mfdataset(config.air_temperature_2m['path'], chunks={}),
-            "relative_humidity_2m": xr.open_mfdataset(config.relative_humidity_2m['path'], chunks={}),
-            "precip_accumulation_1hr": xr.open_mfdataset(config.precip_accumulation_1hr['path'], chunks={}),
+            "wind_speed_10m": xr.open_mfdataset(config.wind_speed_10m['path'], chunks=chunks),
+            "air_temperature_2m": xr.open_mfdataset(config.air_temperature_2m['path'], chunks=chunks),
+            "relative_humidity_2m": xr.open_mfdataset(config.relative_humidity_2m['path'], chunks=chunks),
+            "precip_accumulation_1hr": xr.open_mfdataset(config.precip_accumulation_1hr['path'], chunks=chunks),
         }
+    
     else:
+        
         return {
             "wind_speed_10m": xr.open_mfdataset(config.wind_speed_10m['path'], chunks=None),
             "air_temperature_2m": xr.open_mfdataset(config.air_temperature_2m['path'], chunks=None),

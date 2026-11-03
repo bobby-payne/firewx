@@ -4,7 +4,7 @@
 
 
 # ------------------------------------------
-# Dataset coordinates
+# Dataset dimensions and coordinates
 # ------------------------------------------
 
 time_coordinate_name: "time"
@@ -17,6 +17,15 @@ latitude_coordinate_name: "latitude"
 
 longitude_convention: [0, 360]          # choose from [-180, 180] or [0, 360]
 timezone: "UTC"                         # choose from: "UTC", "LST"
+
+# ------------------------------------------
+# Dask chunking (only used if lazy loading)
+# ------------------------------------------
+
+chunks:
+    time: -1
+    longitude: 20
+    latitude: 20
 
 # ------------------------------------------
 # Weather variables
