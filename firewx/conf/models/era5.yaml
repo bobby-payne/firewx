@@ -33,28 +33,28 @@ chunks:
 
 wind_speed_10m:
 
-  path: "/home/rpayne/data-rpayne/unproc/ERA5/source/sfcWind_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc"
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/SFCWIND/sfcWind_200001_200112_debug.nc"
   variable_name: 'sfcWind'
   units: "m/s"        # choose from: "m/s", "km/h", "mph", "kts"
   transform: null
 
 air_temperature_2m:
 
-  path: "/home/rpayne/data-rpayne/unproc/ERA5/source/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc"
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/TAS/tas_200001_200112_debug.nc"
   variable_name: 'tas'
   units: "K"          # choose from: "K", "C", "F"
   transform: null
 
 relative_humidity_2m:
 
-  path: "/home/rpayne/data-rpayne/unproc/ERA5/RH/*.nc"
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/RH/merged/RH_200001_200112_debug.nc"
   variable_name: 'rh'
   units: "%"          # choose from: "%" or null
   transform: null
 
 precip_accumulation_1hr:
 
-  path: "/home/rpayne/data-rpayne/unproc/ERA5/PREC/merged/PREC_198001_201812.nc"
+  path: "/home/rpayne/data-rpayne/unproc/ERA5/PREC/merged/PREC_200001_200112_debug.nc"
   variable_name: 'pr'
   units: "mm"         # choose from: "mm", "cm", "in"
   transform: "x * 3600"

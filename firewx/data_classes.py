@@ -1,6 +1,8 @@
+import logging
 
 from .data_io import get_wx_data
 from .data_proc import (
+    convert_dataset_to_LST,
     select_time_range,
     select_nearest_gridpoint,
     convert_longitude_range,
@@ -8,7 +10,7 @@ from .data_proc import (
     apply_transform,
     apply_unit_conversion
 )
-from .fire_season import (
+from .utils import (
     get_timezone_UTC_offset,
 )
 
@@ -27,17 +29,29 @@ class DatasetModel:
             self.config.longitude = convert_longitude_range(self.config.longitude, to_centered=True)
         self.utc_offset = get_timezone_UTC_offset(self.config.latitude, self.config.longitude)
 
-        # Open weather data, do pre-processing, then set as attributes of the instance
+        # Open weather data, do pre-processing, load into memory, then set as attributes of the instance
         wx_data_dict = get_wx_data(self.config)
         for var_name, dataset in wx_data_dict.items():
 
-            # Preprocessing/unit standardization
-            dataset = select_time_range(self.config, dataset)
+            # Preprocessing for longitude and grid point selection
             if self.config.longitude_convention == [0, 360]:
                 dataset = convert_dataset_longitude_range(self.config, dataset, to_centered=True)
             dataset = select_nearest_gridpoint(self.config, dataset)
+
+            # Preprocessing for time conversion and time range selection
+            # NOTE: Converting to LST assumes select_nearest_gridpoint has been applied
+            if self.config.timezone == 'UTC':
+                dataset = convert_dataset_to_LST(self.config, dataset)  
+            dataset = select_time_range(self.config, dataset)
+
+            # Apply transformations and unit conversions
             dataset = apply_transform(self.config, var_name, dataset)
             dataset = apply_unit_conversion(self.config, var_name, dataset)
+
+            # Dataset is loaded into memory at this point
+            if self.lazy_load_data:
+                logging.info(f"Loading {var_name} data into memory... this may take a while!")
+                dataset = dataset.compute()
 
             # Set as attribute
             setattr(self, var_name, dataset)

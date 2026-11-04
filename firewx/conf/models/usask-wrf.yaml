@@ -1,0 +1,51 @@
+# ======================================================
+# CONFIG for dataset-specific configuration options
+# ======================================================
+
+
+# ------------------------------------------
+# Dataset coordinates
+# ------------------------------------------
+
+time_coordinate_name: "time"
+longitude_coordinate_name: "lon"
+latitude_coordinate_name: "lat"
+
+# ------------------------------------------
+# Conventions
+# ------------------------------------------
+
+longitude_convention: [0, 360]          # choose from [-180, 180] or [0, 360]
+timezone: "UTC"                         # choose from: "UTC", "LST"
+
+# ------------------------------------------
+# Weather variables
+# ------------------------------------------
+
+wind_speed_10m:
+
+  path: "/users/rpayne/data/unproc/WRF-USASK/ctl/debug/WS10_debug.nc"
+  variable_name: 'WS10'
+  units: "m/s"        # choose from: "m/s", "km/h", "mph", "kts"
+  transform: null
+
+air_temperature_2m:
+
+  path: "/users/rpayne/data/unproc/WRF-USASK/ctl/debug/T2_debug.nc"
+  variable_name: 'T2'
+  units: "K"          # choose from: "K", "C", "F"
+  transform: null
+
+relative_humidity_2m:
+
+  path: "/users/rpayne/data/unproc/WRF-USASK/ctl/debug/RH_debug.nc"
+  variable_name: 'RH'
+  units: "%"          # choose from: "%" or null
+  transform: null
+
+precip_accumulation_1hr:
+
+  path: "/users/rpayne/data/unproc/WRF-USASK/ctl/debug/PREC_debug.nc"
+  variable_name: 'Precip'
+  units: "mm"         # choose from: "mm", "cm", "in"
+  transform: null

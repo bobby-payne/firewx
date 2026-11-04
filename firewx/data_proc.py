@@ -1,6 +1,34 @@
 
 import logging
+import numpy as np
 from haversine import haversine
+
+from .utils import get_timezone_UTC_offset
+
+
+def convert_dataset_to_LST(config, dataset):
+    """
+    Convert the dataset's time dimension to Local Standard Time (LST) based on the latitude and longitude specified in the config.
+    Assumes the dataset's time dimension is in UTC, and all spatial coordinates in the dataset share the same timezone
+    given by the latitude and longitude specified in the config.
+    Also sets the order of coordinates as ([other coordinates], time).
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing latitude and longitude.
+    dataset : xarray.Dataset
+        The dataset containing the time dimension.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with the time dimension converted to LST.
+    """
+
+    tz_offset = get_timezone_UTC_offset(config.latitude, config.longitude)
+    dataset = dataset.assign_coords(time=dataset.time + np.timedelta64(int(tz_offset * 3600), 's'))
+    return dataset
 
 
 def select_time_range(config, dataset):
@@ -19,13 +47,13 @@ def select_time_range(config, dataset):
     xarray.Dataset
         The dataset restricted to the specified time range.
     """
-    start_year = config.start_year
-    final_year = config.final_year
+    start_time = np.datetime64(f"{config.start_year}-01-01 00:00")
+    final_time = np.datetime64(f"{config.final_year}-12-31 23:59")
 
-    if start_year < dataset.time.dt.year.min().item() or final_year > dataset.time.dt.year.max().item():
-        logging.warning("Specified start_year or final_year falls outside the dataset's time range. Is this intended?")
+    if start_time < dataset.time.values[0] or final_time > dataset.time.values[-1]:
+        raise ValueError("Specified start_year or final_year falls outside the dataset's time range (in LST).")
 
-    return dataset.sel(time=slice(f"{start_year}-01-01", f"{final_year}-12-31"))
+    return dataset.sel(time=slice(f"{config.start_year}-01-01", f"{config.final_year}-12-31"))
 
 
 def select_nearest_gridpoint(config, dataset):
