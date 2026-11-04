@@ -1,7 +1,64 @@
 
-def select_nearest_gridpoint(config, dataset, lat, lon):
+import logging
+import numpy as np
+from haversine import haversine
+
+from .utils import get_timezone_UTC_offset
+
+
+def convert_dataset_to_LST(config, dataset):
     """
-    Select the nearest grid point in the dataset to the specified latitude and longitude.
+    Convert the dataset's time dimension to Local Standard Time (LST) based on the latitude and longitude specified in the config.
+    Assumes the dataset's time dimension is in UTC, and all spatial coordinates in the dataset share the same timezone
+    given by the latitude and longitude specified in the config.
+    Also sets the order of coordinates as ([other coordinates], time).
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing latitude and longitude.
+    dataset : xarray.Dataset
+        The dataset containing the time dimension.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with the time dimension converted to LST.
+    """
+
+    tz_offset = get_timezone_UTC_offset(config.latitude, config.longitude)
+    dataset = dataset.assign_coords(time=dataset.time + np.timedelta64(int(tz_offset * 3600), 's'))
+    return dataset
+
+
+def select_time_range(config, dataset):
+    """
+    Select the time range from the dataset based on the start and final year specified in the config.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing start and final year.
+    dataset : xarray.Dataset
+        The dataset containing the time dimension.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset restricted to the specified time range.
+    """
+    start_time = np.datetime64(f"{config.start_year}-01-01 00:00")
+    final_time = np.datetime64(f"{config.final_year}-12-31 23:59")
+
+    if start_time < dataset.time.values[0] or final_time > dataset.time.values[-1]:
+        raise ValueError("Specified start_year or final_year falls outside the dataset's time range (in LST).")
+
+    return dataset.sel(time=slice(f"{config.start_year}-01-01", f"{config.final_year}-12-31"))
+
+
+def select_nearest_gridpoint(config, dataset):
+    """
+    Select the nearest grid point in the dataset to the latitude and longitude specified in config.
 
     Parameters
     ----------
@@ -9,10 +66,6 @@ def select_nearest_gridpoint(config, dataset, lat, lon):
         The configuration dictionary containing grid specifications.
     dataset : xarray.Dataset
         The dataset containing the grid points.
-    lat : float
-        The latitude of the target location.
-    lon : float
-        The longitude of the target location.
 
     Returns
     -------
@@ -21,14 +74,57 @@ def select_nearest_gridpoint(config, dataset, lat, lon):
     """
     lat_name = config.latitude_coordinate_name
     lon_name = config.longitude_coordinate_name
-    nearest_lat = dataset[lat_name].sel({lat_name: lat}, method='nearest')
-    nearest_lon = dataset[lon_name].sel({lon_name: lon}, method='nearest')
+    target_lat = config.latitude
+    target_lon = config.longitude
+
+    nearest_lat = dataset[lat_name].sel({lat_name: target_lat}, method='nearest').item()
+    nearest_lon = dataset[lon_name].sel({lon_name: target_lon}, method='nearest').item()
+
+    distance = haversine((target_lat, target_lon), (nearest_lat, nearest_lon), unit='deg')
+    if abs(distance) > 1:
+        logging.warning(
+            "Nearest grid point to specified latitude and longitude is more than 1° away. Is this intended?"
+            )
+
     return dataset.sel({lat_name: nearest_lat, lon_name: nearest_lon})
 
 
-def convert_longitude_range(config, dataset, to_centered: bool = True):
+def convert_longitude_range(longitude, to_centered: bool = True):
     """
-    Converts longitude range between [0,360) and [-180,180).
+    Converts longitude float between ranges [0,360) and [-180,180).
+    
+    If "to_centered=True", converts the longitude from the [0,360) convention
+    to the standard [-180,180) convention, required for timezone retrieval
+    and by the cffdrs FWI calculation function.
+
+    If "to_centered=False", converts the longitude from the [-180,180) convention
+    to the [0,360) convention.
+
+    Parameters
+    ----------
+    longitude : float
+        The longitude value to convert.
+    to_centered : bool, optional
+        If True, convert from [0,360) to [-180,180).
+        If False, convert from [-180,180) to [0,360).
+        Default is True
+
+    Returns
+    -------
+    float
+        The converted longitude value.
+    """
+
+    if to_centered:
+        longitude = ((longitude + 180.) % 360.) - 180.
+    else:
+        longitude = longitude % 360.
+    return longitude
+
+
+def convert_dataset_longitude_range(config, dataset, to_centered: bool = True):
+    """
+    Converts longitude range of an xarray.Dataset between [0,360) and [-180,180).
     
     If "to_centered=True", converts the longitude coordinate from the [0,360) convention
     to the standard [-180,180) convention, required for timezone retrieval
@@ -39,7 +135,7 @@ def convert_longitude_range(config, dataset, to_centered: bool = True):
 
     Parameters
     ----------
-    dataset : xr.Dataset
+    dataset : xarray.Dataset
         The dataset containing the longitude coordinate.
     to_centered : bool, optional
         If True, convert from [0,360) to [-180,180).
@@ -48,19 +144,14 @@ def convert_longitude_range(config, dataset, to_centered: bool = True):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         The dataset containing the longitude coordinate.
     """
 
     longitude_name = config.longitude_coordinate_name
-    if to_centered:
-        dataset = dataset.assign_coords({
-            longitude_name: (((dataset[longitude_name] + 180.) % 360.) - 180.)
-        })
-    else:
-        dataset = dataset.assign_coords({
-            longitude_name: (dataset[longitude_name] % 360.)
-        })
+    dataset = dataset.assign_coords({
+        longitude_name: convert_longitude_range(dataset[longitude_name], to_centered=to_centered)
+    })
 
     return dataset
 

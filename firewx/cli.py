@@ -2,6 +2,8 @@ import logging
 
 from .configuration import get_config
 from .utils import initialize_logger, track_execution_time
+from .data_classes import DatasetModel
+from .fire_season import compute_fire_season_mask
 
 @track_execution_time
 def main():
@@ -10,5 +12,18 @@ def main():
 
     config = get_config()
 
-    logging.info("Config: %s", config.data)
+    logging.info("Opening and initializing dataset...")
+    dataset = DatasetModel(config)
+
+    # Compute fire season mask for the entire dataset and set as attribute
+    logging.info("Computing fire season mask for the dataset...")
+    dataset.fire_season_mask = compute_fire_season_mask(config, dataset)
+
+    print(dataset.fire_season_mask)
+    logging.info("Fire season mask computed.")
+
+    # Main loop; FWI calculations must be done iteratively.
+    # for year in range(config.start_year, config.end_year + 1):
+    #     logging.info("Processing year: %d", year)
+
     

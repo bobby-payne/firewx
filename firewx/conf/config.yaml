@@ -8,14 +8,15 @@
 
 path_to_cffdrs-ng: "/path/to/cffdrs-ng"
 output_directory: "/path/to/output"
-lazy_load_data: true
+lazy_load_data: false
 
 # ------------------------------------------
 # General dataset and location information
 # ------------------------------------------
 
 dataset_name: "era5"
-year: 2009
+start_year: 2000              # must fall within the dataset's time range
+final_year: 2001
 latitude: 48.2
 longitude: 236.64             # must be consistent with longitude range defined in [dataset].yaml
 output_frequency: "hourly"    # choose from ["hourly", "daily"]
