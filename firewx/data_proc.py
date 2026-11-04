@@ -47,13 +47,21 @@ def select_time_range(config, dataset):
     xarray.Dataset
         The dataset restricted to the specified time range.
     """
-    start_time = np.datetime64(f"{config.start_year}-01-01 00:00")
-    final_time = np.datetime64(f"{config.final_year}-12-31 23:59")
+    if config.start_year is not None:
+        start_datetime = np.datetime64(f"{config.start_year}-01-01 00:00")
+    else:
+        start_datetime = None
+    if config.final_year is not None:
+        final_datetime = np.datetime64(f"{config.final_year}-12-31 23:59")
+    else:
+        final_datetime = None
 
-    if start_time < dataset.time.values[0] or final_time > dataset.time.values[-1]:
-        raise ValueError("Specified start_year or final_year falls outside the dataset's time range (in LST).")
+    if start_datetime is not None and start_datetime < dataset.time.values[0]:
+        raise ValueError("Specified start_year falls outside the dataset's time range (in LST).")
+    if final_datetime is not None and final_datetime > dataset.time.values[-1]:
+        raise ValueError("Specified final_year falls outside the dataset's time range (in LST).")
 
-    return dataset.sel(time=slice(f"{config.start_year}-01-01", f"{config.final_year}-12-31"))
+    return dataset.sel(time=slice(start_datetime, final_datetime))
 
 
 def select_nearest_gridpoint(config, dataset):
