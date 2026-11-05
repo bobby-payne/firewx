@@ -1,11 +1,13 @@
 import logging
 
-from .data_io import get_wx_data
+from .data_io import (
+    open_location_parameters,
+    get_wx_data,
+)
 from .data_proc import (
-    convert_dataset_to_LST,
+    convert_dataset_UTC_to_LST,
     select_time_range,
     select_nearest_gridpoint,
-    convert_longitude_range,
     convert_dataset_longitude_range,
     apply_transform,
     apply_unit_conversion
@@ -24,25 +26,57 @@ class DatasetModel:
         for key, value in self.config.data.items():
             setattr(self, key, value)
 
-        # Get UTC offset for the user-specified location and set as attribute
-        if self.longitude_convention == [0, 360]:
-            self.longitude = convert_longitude_range(self.longitude, to_centered=True)
-        self.utc_offset = get_timezone_UTC_offset(self.latitude, self.longitude)
+        # Read in location parameters
+        self.location_parameters = open_location_parameters(self.config)
+        self.number_of_locations = len(self.location_parameters.groupby(["latitude", "longitude"]))
 
         # Open weather data, do pre-processing, load into memory, then set as attributes of the instance
-        wx_data_dict = get_wx_data(self.config)
-        for var_name, dataset in wx_data_dict.items():
+        self.wx_data_dict = get_wx_data(self.config)
+
+
+    def iter_location(self):
+        """
+        Iterate over each unique location (latitude, longitude) in the location parameters.
+        For each location, set the corresponding attributes and yield the instance.
+        """
+
+        # Iterate over unique latitude and longitude combinations in the location parameters
+        for (latitude, longitude), startup_data in (
+                    self.location_parameters.groupby(["latitude", "longitude"])
+                ):
+            self.latitude = latitude
+            self.longitude = longitude
+            self.startup_data = startup_data
+            self.utc_offset = get_timezone_UTC_offset(latitude, longitude)
+            yield self
+
+
+    def process_data_for_location(self):
+        """
+        Process weather data for the current location (latitude, longitude) set in the instance.
+        (see iterate_location for how the location is set.)
+        Applies preprocessing, transformations, and unit conversions to each dataset.
+        Sets the processed datasets as attributes of the instance.
+        """
+
+        # check if latitude and longitude are set
+        if not hasattr(self, "latitude") or not hasattr(self, "longitude"):
+            raise ValueError("Latitude and longitude must be set before processing data for the location.")
+
+        for var_name, dataset in self.wx_data_dict.items():
+
+            dataset = dataset.copy()
 
             # Preprocessing for longitude and grid point selection
             if self.longitude_convention == [0, 360]:
                 dataset = convert_dataset_longitude_range(self.config, dataset, to_centered=True)
-            dataset = select_nearest_gridpoint(self.config, dataset)
+            dataset = select_nearest_gridpoint(self.config, dataset, self.latitude, self.longitude)
 
             # Preprocessing for time conversion and time range selection
             # NOTE: Converting to LST assumes select_nearest_gridpoint has been applied
             if self.timezone == 'UTC':
-                dataset = convert_dataset_to_LST(self.config, dataset)  
-            dataset = select_time_range(self.config, dataset)
+                dataset = convert_dataset_UTC_to_LST(self.config, dataset, self.utc_offset)  
+            dataset = select_time_range(self.config, dataset, self.crop["start_year"], self.crop["final_year"])
 
             # Apply transformations and unit conversions
             dataset = apply_transform(self.config, var_name, dataset)

@@ -3,52 +3,55 @@ import logging
 import numpy as np
 from haversine import haversine
 
-from .utils import get_timezone_UTC_offset
 
-
-def convert_dataset_to_LST(config, dataset):
+def convert_dataset_UTC_to_LST(config, dataset, utc_offset):
     """
-    Convert the dataset's time dimension to Local Standard Time (LST) based on the latitude and longitude specified in the config.
+    Convert the dataset's time dimension from UTC to Local Standard Time (LST) based on the UTC offset specified.
     Assumes the dataset's time dimension is in UTC, and all spatial coordinates in the dataset share the same timezone
-    given by the latitude and longitude specified in the config.
+    given by the UTC offset specified.
     Also sets the order of coordinates as ([other coordinates], time).
 
     Parameters
     ----------
     config : dict
-        The configuration dictionary containing latitude and longitude.
+        The configuration dictionary containing the time coordinate name.
     dataset : xarray.Dataset
         The dataset containing the time dimension.
+    utc_offset : float
+        The UTC offset of the location for LST conversion.
 
     Returns
     -------
     xarray.Dataset
         The dataset with the time dimension converted to LST.
     """
-
-    tz_offset = get_timezone_UTC_offset(config.latitude, config.longitude)
-    dataset = dataset.assign_coords(time=dataset.time + np.timedelta64(int(tz_offset * 3600), 's'))
+    time_coordinate_name = config.time_coordinate_name
+    dataset = dataset.assign_coords(
+        {time_coordinate_name: dataset[time_coordinate_name] + np.timedelta64(int(utc_offset * 3600), 's')}
+        )
     return dataset
 
 
-def select_time_range(config, dataset):
+def select_time_range(config, dataset, start_year, final_year):
     """
-    Select the time range from the dataset based on the start and final year specified in the config.
+    Select the time range from the dataset based on the start and final year specified.
 
     Parameters
     ----------
     config : dict
-        The configuration dictionary containing start and final year.
+        The configuration dictionary containing the time coordinate name.
     dataset : xarray.Dataset
         The dataset containing the time dimension.
+    start_year : int
+        The start year for the time range selection.
+    final_year : int
+        The final year for the time range selection.
 
     Returns
     -------
     xarray.Dataset
         The dataset restricted to the specified time range.
     """
-    start_year = config.crop["start_year"]
-    final_year = config.crop["final_year"]
     
     if start_year is not None:
         start_datetime = np.datetime64(f"{start_year}-01-01 00:00")
@@ -59,15 +62,16 @@ def select_time_range(config, dataset):
     else:
         final_datetime = None
 
-    if start_datetime is not None and start_datetime < dataset.time.values[0]:
+    time_coordinate_name = config.time_coordinate_name
+    if start_datetime is not None and start_datetime < dataset[time_coordinate_name].values[0]:
         raise ValueError("Specified start_year falls outside the dataset's time range (in LST).")
-    if final_datetime is not None and final_datetime > dataset.time.values[-1]:
+    if final_datetime is not None and final_datetime > dataset[time_coordinate_name].values[-1]:
         raise ValueError("Specified final_year falls outside the dataset's time range (in LST).")
 
-    return dataset.sel(time=slice(start_datetime, final_datetime))
+    return dataset.sel({time_coordinate_name: slice(start_datetime, final_datetime)})
 
 
-def select_nearest_gridpoint(config, dataset):
+def select_nearest_gridpoint(config, dataset, latitude, longitude):
     """
     Select the nearest grid point in the dataset to the latitude and longitude specified in config.
 
@@ -77,6 +81,10 @@ def select_nearest_gridpoint(config, dataset):
         The configuration dictionary containing grid specifications.
     dataset : xarray.Dataset
         The dataset containing the grid points.
+    latitude : float
+        The target latitude for selecting the nearest grid point.
+    longitude : float
+        The target longitude for selecting the nearest grid point.
 
     Returns
     -------
@@ -85,8 +93,8 @@ def select_nearest_gridpoint(config, dataset):
     """
     lat_name = config.latitude_coordinate_name
     lon_name = config.longitude_coordinate_name
-    target_lat = config.latitude
-    target_lon = config.longitude
+    target_lat = latitude
+    target_lon = longitude
 
     nearest_lat = dataset[lat_name].sel({lat_name: target_lat}, method='nearest').item()
     nearest_lon = dataset[lon_name].sel({lon_name: target_lon}, method='nearest').item()
