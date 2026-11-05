@@ -25,22 +25,22 @@ class DatasetModel:
             setattr(self, key, value)
 
         # Get UTC offset for the user-specified location and set as attribute
-        if self.config.longitude_convention == [0, 360]:
-            self.config.longitude = convert_longitude_range(self.config.longitude, to_centered=True)
-        self.utc_offset = get_timezone_UTC_offset(self.config.latitude, self.config.longitude)
+        if self.longitude_convention == [0, 360]:
+            self.longitude = convert_longitude_range(self.longitude, to_centered=True)
+        self.utc_offset = get_timezone_UTC_offset(self.latitude, self.longitude)
 
         # Open weather data, do pre-processing, load into memory, then set as attributes of the instance
         wx_data_dict = get_wx_data(self.config)
         for var_name, dataset in wx_data_dict.items():
 
             # Preprocessing for longitude and grid point selection
-            if self.config.longitude_convention == [0, 360]:
+            if self.longitude_convention == [0, 360]:
                 dataset = convert_dataset_longitude_range(self.config, dataset, to_centered=True)
             dataset = select_nearest_gridpoint(self.config, dataset)
 
             # Preprocessing for time conversion and time range selection
             # NOTE: Converting to LST assumes select_nearest_gridpoint has been applied
-            if self.config.timezone == 'UTC':
+            if self.timezone == 'UTC':
                 dataset = convert_dataset_to_LST(self.config, dataset)  
             dataset = select_time_range(self.config, dataset)
 
@@ -55,10 +55,3 @@ class DatasetModel:
 
             # Set as attribute
             setattr(self, var_name, dataset)
-
-
-class DatasetStation:
-
-    def __init__(self, config):
-
-        raise NotImplementedError("DatasetStation class is not implemented yet.")
