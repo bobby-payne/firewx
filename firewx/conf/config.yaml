@@ -18,10 +18,11 @@ lazy_load_data: false
 
 dataset_name: "era5"
 cffwis_version: "FWI2025"     # choose from ["FWI1987", "FWI2025"]
-start_year: 2000              # must fall within the dataset's time range
-final_year: null
 latitude: 48.2
 longitude: 236.64             # must be consistent with longitude range defined in [dataset].yaml
+crop:                         # crop dataset to [start_year, final_year]. put null for no cropping.
+  start_year: 2000
+  final_year: null
 output_vars:                  # see valid_output_variables.txt
   - "MASK"
   - "WS"

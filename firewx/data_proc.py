@@ -47,12 +47,15 @@ def select_time_range(config, dataset):
     xarray.Dataset
         The dataset restricted to the specified time range.
     """
-    if config.start_year is not None:
-        start_datetime = np.datetime64(f"{config.start_year}-01-01 00:00")
+    start_year = config.crop["start_year"]
+    final_year = config.crop["final_year"]
+    
+    if start_year is not None:
+        start_datetime = np.datetime64(f"{start_year}-01-01 00:00")
     else:
         start_datetime = None
-    if config.final_year is not None:
-        final_datetime = np.datetime64(f"{config.final_year}-12-31 23:59")
+    if final_year is not None:
+        final_datetime = np.datetime64(f"{final_year}-12-31 23:59")
     else:
         final_datetime = None
 
