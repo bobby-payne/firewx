@@ -6,9 +6,9 @@
 # General IO
 # ------------------------------------------
 
-path_to_cffdrs_ng: "/users/rpayne/cffdrs-ng"            # Computes hourly FWIs
-path_to_cffdrs_py: "/users/rpayne/cffdrs_py"            # Computes daily FWIs
-path_to_location_parameters: "/path/to/input.csv"       # Path to CSV file containing lat/lons to calculate FWIs for, and other info as detailed in the README
+path_to_cffdrs_ng: "/sapho/rpayne/cffdrs-ng"            # Computes hourly FWIs
+path_to_cffdrs_py: "/sapho/rpayne/cffdrs_py"            # Computes daily FWIs
+path_to_location_parameters: "/sapho/rpayne/firewx/example.csv"       # Path to CSV file containing lat/lons to calculate FWIs for, and other info as detailed in the README
 output_directory: "/path/to/output"
 lazy_load_data: false
 
@@ -18,10 +18,8 @@ lazy_load_data: false
 
 dataset_name: "era5"
 cffwis_version: "FWI2025"     # choose from ["FWI1987", "FWI2025"]
-latitude: 48.2
-longitude: 236.64             # must be consistent with longitude range defined in [dataset].yaml
-crop:                         # crop dataset to [start_year, final_year]. put null for no cropping.
-  start_year: 2000
+crop:                         # crop dataset to [start_year, final_year].
+  start_year: null
   final_year: null
 output_vars:                  # see valid_output_variables.txt
   - "MASK"

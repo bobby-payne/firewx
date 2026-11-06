@@ -3,6 +3,7 @@ logs/
 firewx.log
 testing.ipynb
 conf/models/era5.yaml
+example.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

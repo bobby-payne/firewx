@@ -23,7 +23,6 @@ def main():
 
         logging.info(f"Starting on location {i} / {dataset.number_of_locations}...")
 
-
         logging.info(f"⛈️ Processing weather data...")
         dataset.process_data_for_location()
 
@@ -32,16 +31,8 @@ def main():
 
         logging.info(f"Finished processing location {i}.")
 
-
-
-
-    # Compute fire season mask for the entire dataset and set as attribute
-    # logging.info("Computing fire season mask for the dataset...")
-    # dataset.fire_season_mask = compute_fire_season_mask(config, dataset)
-
-
-    # Main loop; FWI calculations must be done iteratively.
-    # for year in range(config.start_year, config.end_year + 1):
-    #     logging.info("Processing year: %d", year)
+        # Main loop; FWI calculations must be done iteratively over years.
+        # for year in range(config.start_year, config.end_year + 1):
+        #     logging.info("Processing year: %d", year)
 
     
