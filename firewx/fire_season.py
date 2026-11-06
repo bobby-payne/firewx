@@ -1,7 +1,6 @@
 import numpy as np
 import xarray as xr
 import pandas as pd
-import logging
 
 
 def compute_fire_season_mask(
@@ -17,6 +16,9 @@ def compute_fire_season_mask(
         The configuration object containing fire season parameters.
     dataset_object : data_classes.DatasetModel
         The dataset object containing hourly air temperature data in deg C.
+    cffwis_version : str
+        The version of the Canadian Fire Weather Index System to use (e.g., "FWI1987" or "FWI2025").
+        Only affects whether or not the output mask is hourly or daily.
 
     Returns
     -------
@@ -79,11 +81,19 @@ def compute_fire_season_mask(
             user_end_date=end_date,
         )
 
-        # make hourly by repeating each entry 24 times
-        fire_season_mask_hourly = make_fire_season_mask_hourly(config, fire_season_mask_daily)
+        if config.cffwis_version.upper() == "FWI2025":
 
-        # attach the fire season mask to the dataset object for the current year
-        fire_season_masks.append(fire_season_mask_hourly)
+            # make hourly by repeating each entry 24 times per day
+            fire_season_mask_hourly = make_fire_season_mask_hourly(config, fire_season_mask_daily)
+            fire_season_masks.append(fire_season_mask_hourly)
+
+        elif config.cffwis_version.upper() == "FWI1987":
+
+            fire_season_masks.append(fire_season_mask_daily)
+
+        else:
+            
+            raise ValueError(f"Unrecognied cffwis_version: {config.cffwis_version}")
 
     # combine all yearly fire season masks into a single DataArray
     fire_season_mask_all_years = xr.concat(fire_season_masks, dim=time_coordinate_name)
