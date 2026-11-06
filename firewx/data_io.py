@@ -1,8 +1,48 @@
 import xarray as xr
+import pandas as pd
 from glob import glob
 
 
-def open_mfdataset_eager(path: str) -> xr.Dataset:
+def open_location_parameters(config):
+    """Open location parameters .csv based on the provided configuration.
+
+    Args:
+        config: Configuration object containing paths and settings for location parameters.
+
+    Returns:
+        pandas.DataFrame: DataFrame containing location parameters.
+    """
+
+    location_parameters = pd.read_csv(
+        config.path_to_location_parameters,
+        )
+
+    # Raise exception if there isn't a latitude, longitude, and year column
+    required_columns = ['latitude', 'longitude', 'year']
+    for col in required_columns:
+        if col not in location_parameters.columns:
+            raise ValueError(f"Missing required column '{col}' in location parameters file.")
+
+    # Raise exception if there are duplicates of (latitude, longitude, year)
+    if location_parameters.duplicated(subset=['latitude', 'longitude', 'year']).any():
+        raise ValueError("Duplicate year(s) detected for the same latitude and longitude.")
+
+    # Convert start_date and end_date columns to datetime if they exist
+    if "start_date" in location_parameters.columns:
+        location_parameters['start_date'] = pd.to_datetime(
+            location_parameters['start_date'],
+            format="%Y-%m-%d"
+            )
+    if "end_date" in location_parameters.columns:
+        location_parameters['end_date'] = pd.to_datetime(
+            location_parameters['end_date'],
+            format="%Y-%m-%d"
+            )
+
+    return location_parameters.sort_values(["latitude", "longitude", "year"])
+
+
+def open_mfdataset_eager(path):
     """Open one or more NetCDF files WITHOUT Dask lazy-loading and load into memory.
 
     Args:
@@ -31,7 +71,7 @@ def open_mfdataset_eager(path: str) -> xr.Dataset:
     return xr.combine_by_coords(datasets)
 
 
-def get_wx_data(config) -> dict:
+def get_wx_data(config):
     """Fetch weather data based on the provided configuration.
 
     Args:

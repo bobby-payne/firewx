@@ -1,5 +1,7 @@
 import numpy as np
 import xarray as xr
+import pandas as pd
+import logging
 
 
 def compute_fire_season_mask(
@@ -24,6 +26,9 @@ def compute_fire_season_mask(
         but with a fire season mask attribute named 'fire_season_mask'.
     """
 
+    # assume time dim has the same name as the time coordinate given in config
+    time_coordinate_name = config.time_coordinate_name
+
     # compute the daily maximum temperature
     air_temperature_daymax = dataset_object.air_temperature_2m.resample(time="1D").max()
 
@@ -31,8 +36,26 @@ def compute_fire_season_mask(
     fire_season_masks = []
 
     # calculate fire season mask for each year
-    # for year in range(config.start_year, config.final_year + 1):
-    for year in [2000]:
+    for row in dataset_object.startup_data.itertuples(index=False):
+
+        year = row.year
+        if not pd.isna(config.crop["start_year"]):
+            if year < config.crop["start_year"]:
+                continue
+        if not pd.isna(config.crop["final_year"]):
+            if year > config.crop["final_year"]:
+                continue
+
+        try:
+            start_date = row.start_date
+        except:
+            start_date = None
+        try:
+            end_date = row.end_date
+        except:
+            end_date = None
+
+        print(f"Processing year {year}...")
 
         # select the daily max temperature for the current year
         air_temperature_daymax_for_year = air_temperature_daymax.sel(time=str(year))
@@ -41,7 +64,7 @@ def compute_fire_season_mask(
         masks_for_thresholds_met = compute_masks_for_thresholds_met(
             config,
             air_temperature_daymax_for_year,
-        )
+            )
 
         # compute the fire season mask for the current year
         fire_season_mask_daily = compute_daily_fire_season_mask_for_year(masks_for_thresholds_met)
@@ -49,14 +72,21 @@ def compute_fire_season_mask(
         # update the fire season mask to only include the longest season
         fire_season_mask_daily = handle_shoulder_seasons(fire_season_mask_daily)
 
+        # impose user-specified start and end dates for the fire season if provided
+        fire_season_mask_daily = modify_fire_season_mask_with_user_dates(
+            fire_season_mask_daily,
+            user_start_date=start_date,
+            user_end_date=end_date,
+        )
+
         # make hourly by repeating each entry 24 times
-        fire_season_mask_hourly = fire_season_mask_daily.resample(time="1h").ffill()
+        fire_season_mask_hourly = make_fire_season_mask_hourly(config, fire_season_mask_daily)
 
         # attach the fire season mask to the dataset object for the current year
         fire_season_masks.append(fire_season_mask_hourly)
 
     # combine all yearly fire season masks into a single DataArray
-    fire_season_mask_all_years = xr.concat(fire_season_masks, dim="time")
+    fire_season_mask_all_years = xr.concat(fire_season_masks, dim=time_coordinate_name)
 
     return fire_season_mask_all_years
 
@@ -147,6 +177,10 @@ def compute_daily_fire_season_mask_for_year(masks_for_thresholds_met):
 
         fire_season[i] = active
 
+    # raise error if no fire season was detected based on temperature thresholds
+    if not fire_season.any():
+        raise ValueError("No fire season detected at location.")
+
     # put in xarray Dataset
     fire_season = xr.Dataset(
         {
@@ -205,3 +239,133 @@ def handle_shoulder_seasons(fire_season_mask_daily: xr.Dataset) -> xr.Dataset:
     )
 
     return fire_season_mask_daily_updated
+
+
+def modify_fire_season_mask_with_user_dates(
+        fire_season_mask,
+        user_start_date=None,
+        user_end_date=None,
+):
+    """
+    Override the detected fire-season start and/or end dates
+    according to user-specified start_date and end_date.
+    If a boundary is not specified, the function will use the start or end date
+    derived from the temperature thresholds. If neither is available, an error is raised.
+    Assumes input fire_season_mask is not empty, and only contains a single fire season.
+
+    Parameters
+    ----------
+    fire_season_mask : xarray.Dataset
+        Dataset containing the fire season mask.
+    user_start_date : str or pd.Timestamp, optional
+        User-specified start date of the fire season.
+    user_end_date : str or pd.Timestamp, optional
+        User-specified end date of the fire season.
+
+    Returns
+    -------
+    xarray.Dataset
+        Dataset with the fire season mask modified according to the user-specified start and end dates.
+    """
+
+    # relevant data
+    datetimes = pd.DatetimeIndex(fire_season_mask.time.values)
+    mask_values = fire_season_mask["fire_season_mask"].values.astype(bool)
+    
+    # get the time index of start and end of the fire season, according to the given mask
+    active_indices = np.flatnonzero(mask_values)
+    tempbased_start_idx = active_indices[0]
+    tempbased_end_idx = active_indices[-1] + 1
+
+    # get the time index of start and/or end of the fire season as provided by the user
+    if not pd.isna(user_start_date):
+
+        if pd.Timestamp(user_start_date).year != datetimes[0].year:
+            raise ValueError(f"User-provided season start date ({user_start_date.date()}) for year {datetimes[0].year} is not compatible.")
+
+        user_start_date = pd.Timestamp(user_start_date).normalize()
+        user_start_idx = datetimes.get_loc(user_start_date)
+
+    if not pd.isna(user_end_date):
+
+        if pd.Timestamp(user_end_date).year != datetimes[0].year:
+            raise ValueError(f"User-provided season end date ({user_end_date.date()}) for year {datetimes[0].year} is not compatible.")
+
+        user_end_date = pd.Timestamp(user_end_date).normalize()
+        user_end_idx = datetimes.get_loc(user_end_date)
+
+    # modify the mask according to user-specified start and end dates
+    if not pd.isna(user_start_date):
+
+        # case: user-specified start date is later than temperature-derived start date
+        if tempbased_start_idx < user_start_idx:
+            mask_values[tempbased_start_idx:user_start_idx] = False
+
+        # case: user-specified start date is earlier than temperature-derived start date
+        elif tempbased_start_idx > user_start_idx:
+            mask_values[user_start_idx:tempbased_start_idx] = True
+
+        # case: equal
+        else:
+            pass
+
+    if not pd.isna(user_end_date):
+
+        # case: user-specified end date is earlier than temperature-derived end date
+        if tempbased_end_idx > user_end_idx:
+            mask_values[user_end_idx:tempbased_end_idx] = False
+
+        # case: user-specified end date is later than temperature-derived end date
+        elif tempbased_end_idx < user_end_idx:
+            mask_values[tempbased_end_idx:user_end_idx] = True
+
+        # case: equal
+        else:
+            pass
+
+
+    # Put into an xarray dataset
+    updated_mask = xr.Dataset(
+        {
+            "fire_season_mask": xr.DataArray(
+                mask_values,
+                coords=fire_season_mask.coords,
+                dims=fire_season_mask.dims,
+            )
+        }
+    )
+
+    return updated_mask
+
+
+def make_fire_season_mask_hourly(config, fire_season_mask_daily):
+    """
+    Convert a daily fire season mask to an hourly fire season mask by forward filling.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary containing the time coordinate name.
+    fire_season_mask_daily : xarray.Dataset
+        Daily fire season mask.
+
+    Returns
+    -------
+    xarray.Dataset
+        Hourly fire season mask.
+    """
+    time_coordinate_name = config.time_coordinate_name
+    datetimes_daily = fire_season_mask_daily[time_coordinate_name]
+
+    datetimes_hourly = pd.date_range(
+        start=datetimes_daily.values[0],
+        end=datetimes_daily.values[-1] + pd.Timedelta(hours=23),
+        freq="1h"
+    )
+
+    fire_season_mask_hourly = (
+        fire_season_mask_daily
+        .reindex({time_coordinate_name: datetimes_hourly}, method="ffill")
+    )
+
+    return fire_season_mask_hourly
