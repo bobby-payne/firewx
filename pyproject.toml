@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firewx"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "xarray",
+    "pyyaml",
+    "cffdrs @ git+https://github.com/cffdrs/cffdrs_py@2480d4351e7f63efd3060c4ef5afc86b19cd3d74"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[project.scripts]
+firewx = "firewx.main:main"
+
+[project.optional-dependencies]
+dev = [
+    "matplotlib",
+    "ipykernel",
+]
