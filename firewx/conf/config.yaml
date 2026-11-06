@@ -6,8 +6,6 @@
 # General IO
 # ------------------------------------------
 
-path_to_cffdrs_ng: "/sapho/rpayne/cffdrs-ng"            # Computes hourly FWIs
-path_to_cffdrs_py: "/sapho/rpayne/cffdrs_py"            # Computes daily FWIs
 path_to_location_parameters: "/sapho/rpayne/firewx/example.csv"       # Path to CSV file containing lat/lons to calculate FWIs for, and other info as detailed in the README
 output_directory: "/path/to/output"
 lazy_load_data: false

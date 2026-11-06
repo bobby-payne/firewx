@@ -7,11 +7,15 @@ name = "firewx"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-    "numpy",
-    "pandas",
-    "xarray",
-    "pyyaml",
-    "cffdrs @ git+https://github.com/cffdrs/cffdrs_py@2480d4351e7f63efd3060c4ef5afc86b19cd3d74"
+    "numpy>=2.5.4",
+    "pandas>=3.1.1",
+    "xarray>=2026.9.0",
+    "pyyaml>=6.0.3",
+    "pytz>=2026.6",
+    "timezonefinder>=9.2.0",
+    "haversine>=2.9.0",
+    "cffdrs @ git+https://github.com/cffdrs/cffdrs_py@2480d4351e7f63efd3060c4ef5afc86b19cd3d74",
+    "cffdrs-ng @ git+https://github.com/bobby-payne/cffdrs-ng"
 ]
 
 [tool.setuptools.packages.find]
@@ -22,6 +26,6 @@ firewx = "firewx.main:main"
 
 [project.optional-dependencies]
 dev = [
-    "matplotlib",
-    "ipykernel",
+    "matplotlib>=3.11.2",
+    "ipykernel>=7.4.0",
 ]
