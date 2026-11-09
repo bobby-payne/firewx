@@ -31,8 +31,8 @@ def compute_fire_season_mask(
     # assume time dim has the same name as the time coordinate given in config
     time_coordinate_name = config.time_coordinate_name
 
-    # compute the daily maximum temperature
-    air_temperature_daymax = dataset_object.air_temperature_2m.resample(time="1D").max()
+    # retrieve the daily maximum temperature
+    air_temperature_daymax = dataset_object.air_temperature_2m_daymax
 
     # empty list to store fire season masks for each year
     fire_season_masks = []

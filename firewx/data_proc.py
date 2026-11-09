@@ -306,6 +306,22 @@ def convert_precipitation_units_to_mm(precipitation, from_unit):
             f"Unsupported precipitation unit: {from_unit}. Choose from ['mm', 'cm', 'm', 'in']."
         )
 
+def select_noon_values(config, dataset):
+    """
+    Select only the values corresponding to noon (12:00) from the dataset.
+
+    Parameters:
+    - config: Configuration object containing the time coordinate name.
+    - dataset: xarray DataArray or Dataset with a time coordinate.
+
+    Returns:
+    - dataset: xarray DataArray or Dataset containing only the noon values.
+    """
+
+    time_coordinate_name = config.time_coordinate_name
+    dataset = dataset.sel({time_coordinate_name: dataset[time_coordinate_name].dt.hour == 12})
+    return dataset
+
 
 def convert_precipitation_hourly_to_daily(config, precipitation_hourly):
     """
