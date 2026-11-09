@@ -10,7 +10,8 @@ from .data_proc import (
     select_nearest_gridpoint,
     convert_dataset_longitude_range,
     apply_transform,
-    apply_unit_conversion
+    apply_unit_conversion,
+    convert_precipitation_hourly_to_daily,
 )
 from .utils import (
     get_timezone_UTC_offset,
@@ -81,6 +82,14 @@ class DatasetModel:
             # Apply transformations and unit conversions
             dataset = apply_transform(self.config, var_name, dataset)
             dataset = apply_unit_conversion(self.config, var_name, dataset)
+
+            # Compute and store daily noon precipitation if applicable
+            if var_name == "precip_accumulation_1hr":
+                setattr(
+                    self,
+                    "precip_accumulation_24hr",
+                    convert_precipitation_hourly_to_daily(self.config, dataset)
+                    )
 
             # Dataset is loaded into memory at this point
             if self.lazy_load_data:

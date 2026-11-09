@@ -305,3 +305,30 @@ def convert_precipitation_units_to_mm(precipitation, from_unit):
         raise ValueError(
             f"Unsupported precipitation unit: {from_unit}. Choose from ['mm', 'cm', 'm', 'in']."
         )
+
+
+def convert_precipitation_hourly_to_daily(config, precipitation_hourly):
+    """
+    Convert hourly precipitation data to daily precipitation data.
+    Daily precipitation accumulation is from NOON to NOON of the next day.
+
+    Parameters:
+    - config: Configuration object containing the time coordinate name.
+    - precipitation_hourly: Hourly precipitation data (xarray DataArray or Dataset).
+
+    Returns:
+    - precipitation_daily: Daily precipitation data (xarray DataArray or Dataset).
+    """
+
+    time_coordinate_name = config.time_coordinate_name
+
+    precipitation_daily = precipitation_hourly.resample(
+        **{time_coordinate_name: "24h"},
+        offset="12h",
+        closed="right",
+        label="right"
+    ).sum(min_count=24)
+
+    precipitation_daily = precipitation_daily.isel(time=slice(None, -1))
+
+    return precipitation_daily
