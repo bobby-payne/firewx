@@ -63,10 +63,6 @@ def select_time_range(config, dataset, start_year, final_year):
         final_datetime = None
 
     time_coordinate_name = config.time_coordinate_name
-    if start_datetime is not None and start_datetime < dataset[time_coordinate_name].values[0]:
-        raise ValueError("Specified start_year falls outside the dataset's time range (in LST).")
-    if final_datetime is not None and final_datetime > dataset[time_coordinate_name].values[-1]:
-        raise ValueError("Specified final_year falls outside the dataset's time range (in LST).")
 
     return dataset.sel({time_coordinate_name: slice(start_datetime, final_datetime)})
 
@@ -309,3 +305,46 @@ def convert_precipitation_units_to_mm(precipitation, from_unit):
         raise ValueError(
             f"Unsupported precipitation unit: {from_unit}. Choose from ['mm', 'cm', 'm', 'in']."
         )
+
+def select_noon_values(config, dataset):
+    """
+    Select only the values corresponding to noon (12:00) from the dataset.
+
+    Parameters:
+    - config: Configuration object containing the time coordinate name.
+    - dataset: xarray DataArray or Dataset with a time coordinate.
+
+    Returns:
+    - dataset: xarray DataArray or Dataset containing only the noon values.
+    """
+
+    time_coordinate_name = config.time_coordinate_name
+    dataset = dataset.sel({time_coordinate_name: dataset[time_coordinate_name].dt.hour == 12})
+    return dataset
+
+
+def convert_precipitation_hourly_to_daily(config, precipitation_hourly):
+    """
+    Convert hourly precipitation data to daily precipitation data.
+    Daily precipitation accumulation is from NOON to NOON of the next day.
+
+    Parameters:
+    - config: Configuration object containing the time coordinate name.
+    - precipitation_hourly: Hourly precipitation data (xarray DataArray or Dataset).
+
+    Returns:
+    - precipitation_daily: Daily precipitation data (xarray DataArray or Dataset).
+    """
+
+    time_coordinate_name = config.time_coordinate_name
+
+    precipitation_daily = precipitation_hourly.resample(
+        **{time_coordinate_name: "24h"},
+        offset="12h",
+        closed="right",
+        label="right"
+    ).sum(min_count=24)
+
+    precipitation_daily = precipitation_daily.isel(time=slice(None, -1))
+
+    return precipitation_daily

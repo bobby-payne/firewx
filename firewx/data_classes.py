@@ -10,7 +10,9 @@ from .data_proc import (
     select_nearest_gridpoint,
     convert_dataset_longitude_range,
     apply_transform,
-    apply_unit_conversion
+    apply_unit_conversion,
+    select_noon_values,
+    convert_precipitation_hourly_to_daily,
 )
 from .utils import (
     get_timezone_UTC_offset,
@@ -81,6 +83,29 @@ class DatasetModel:
             # Apply transformations and unit conversions
             dataset = apply_transform(self.config, var_name, dataset)
             dataset = apply_unit_conversion(self.config, var_name, dataset)
+
+            # Compute and store daily values if using CFFWIS 1987 daily system
+            if self.cffwis_version == "FWI1987":
+                if var_name == "precip_accumulation_1hr":
+                    setattr(
+                        self,
+                        "precip_accumulation_24hr",
+                        convert_precipitation_hourly_to_daily(self.config, dataset)
+                        )
+                else:
+                    setattr(
+                        self,
+                        var_name + "_noon",
+                        select_noon_values(self.config, dataset)
+                    )
+
+            # Daily maximum temperature is required for fire season computation
+            if var_name == "air_temperature_2m":
+                setattr(
+                    self,
+                    "air_temperature_2m_daymax",
+                    dataset.resample(time="1D").max()
+                )
 
             # Dataset is loaded into memory at this point
             if self.lazy_load_data:

@@ -45,61 +45,6 @@ def track_execution_time(func):
     return inner_function
 
 
-def import_cffdrs(config):
-
-    cffwis_system = config.cffwis_version.upper()
-
-    # Daily system
-    if cffwis_system == "FWI1987":
-
-        path_to_cffdrs_py = os.path.join(
-            config.path_to_cffdrs_py, "cffdrs/"
-        )
-
-        if path_to_cffdrs_py not in sys.path:
-            sys.path.append(path_to_cffdrs_py)
-
-        from fwi import (
-            fine_fuel_moisture_code,
-            duff_moisture_code,
-            drought_code,
-            initial_spread_index,
-            buildup_index,
-            fire_weather_index,
-        )
-
-        return SimpleNamespace(
-            fine_fuel_moisture_code=fine_fuel_moisture_code,
-            duff_moisture_code=duff_moisture_code,
-            drought_code=drought_code,
-            initial_spread_index=initial_spread_index,
-            buildup_index=buildup_index,
-            fire_weather_index=fire_weather_index,
-        )
-
-    # Hourly system
-    elif cffwis_system == "FWI2025":
-
-        path_to_cffdrs_ng = os.path.join(
-            config.path_to_cffdrs_ng, "FWI/Python"
-        )
-
-        if path_to_cffdrs_ng not in sys.path:
-            sys.path.append(path_to_cffdrs_ng)
-
-        from NG_FWI import hFWI
-
-        return SimpleNamespace(
-            hFWI=hFWI
-        )
-
-    else:
-        raise ValueError(
-            f"Invalid cffdrs_version: {cffwis_system}. "
-            "Choose from ['FWI1987', 'FWI2025']."
-        )
-
-
 def get_timezone_UTC_offset(lat: float, long: float) -> float:
     """
     Get the timezone offset from UTC at a given latitude and longitude.
