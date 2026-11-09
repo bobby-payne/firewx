@@ -15,10 +15,10 @@ lazy_load_data: false
 # ------------------------------------------
 
 dataset_name: "era5"
-cffwis_version: "FWI2025"     # choose from ["FWI1987", "FWI2025"]
-crop:                         # crop dataset to [start_year, final_year].
+cffwis_version: "FWI1987"     # choose from ["FWI1987", "FWI2025"]
+crop:                         # crop dataset to [start_year, final_year], inclusive.
   start_year: null
-  final_year: null
+  final_year: 2001
 output_vars:                  # see valid_output_variables.txt
   - "MASK"
   - "WS"

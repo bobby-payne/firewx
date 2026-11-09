@@ -57,8 +57,6 @@ def compute_fire_season_mask(
         except:
             end_date = None
 
-        print(f"Processing year {year}...")
-
         # select the daily max temperature for the current year
         air_temperature_daymax_for_year = air_temperature_daymax.sel(time=str(year))
 
