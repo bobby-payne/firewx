@@ -1,4 +1,4 @@
-mask
+fire_season_mask
 ws
 temp
 rh

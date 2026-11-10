@@ -12,7 +12,7 @@ from cffdrs.fwi import (
 )
 
 
-def calculate_daily_fwi(config, dataset_object):
+def compute_daily_fwi(config, dataset_object):
     """
     Calculate the daily Fire Weather Index (FWI) for all years in the dataset,
     combined into a single pandas dataframe.
@@ -27,14 +27,14 @@ def calculate_daily_fwi(config, dataset_object):
 
     fwi_df_dict = {}
     for year in dataset_object.startup_data['year'].unique():
-        fwi_df_dict[year] = calculate_daily_fwi_for_year(config, dataset_object, year)
+        fwi_df_dict[year] = compute_daily_fwi_for_year(config, dataset_object, year)
 
     # combine all yearly dataframes into a single dataframe
-    combined_fwi_df = pd.concat(fwi_df_dict.values(), keys=fwi_df_dict.keys(), names=['year', 'date'])
+    combined_fwi_df = pd.concat(fwi_df_dict.values())
     return combined_fwi_df
 
 
-def calculate_daily_fwi_for_year(config, dataset_object, year):
+def compute_daily_fwi_for_year(config, dataset_object, year):
     """
     Calculate the daily Fire Weather Index (FWI) for a given year.
 

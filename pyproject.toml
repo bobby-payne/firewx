@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "firewx"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=2.5.4",
@@ -22,7 +22,7 @@ dependencies = [
 where = ["."]
 
 [project.scripts]
-firewx = "firewx.main:main"
+firewx = "firewx.cli:main"
 
 [project.optional-dependencies]
 dev = [

@@ -1,0 +1,11 @@
+fire_season_mask
+ws
+temp
+rh
+prec
+ffmc
+dmc
+dc
+isi
+bui
+fwi

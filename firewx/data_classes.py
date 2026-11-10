@@ -1,8 +1,10 @@
 import logging
+from os import path
 
 from .data_io import (
     open_location_parameters,
     get_wx_data,
+    save_fwi_data,
 )
 from .data_proc import (
     convert_dataset_UTC_to_LST,

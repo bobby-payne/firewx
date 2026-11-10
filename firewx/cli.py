@@ -1,10 +1,12 @@
 import logging
+import pandas as pd
 
 from .configuration import get_config
 from .utils import initialize_logger, track_execution_time
 from .data_classes import DatasetModel
 from .fire_season import compute_fire_season_mask
-from .fwi_daily import compute_fwi_daily
+from .fwi_daily import compute_daily_fwi
+from .data_io import save_fwi_data
 
 
 @track_execution_time
@@ -17,9 +19,11 @@ def main():
 
     logging.info("Opening and initializing dataset...")
     dataset = DatasetModel(config)
-    logging.info(f"Success! Detected {dataset.number_of_locations} unique locations.")
+    logging.info(f"Success! Detected {dataset.number_of_locations} unique locations.\n")
 
-    # Iterate over each location using the dataset's iterator method and process its data in-place
+    # Iterate over each location using the dataset's iterator method
+    fire_weather_indices_dataframe_list = []
+
     for i, _ in enumerate(dataset.iter_location(), start=1):
 
         logging.info(f"Starting on location {i} / {dataset.number_of_locations}...")
@@ -32,16 +36,19 @@ def main():
 
         logging.info("📊 Computing fire weather indices...")
         if dataset.cffwis_version.upper() == 'FWI1987':
-            dataset.fire_weather_indices = compute_fwi_daily(config, dataset)
+            fire_weather_indices_dataframe_list.append(
+                compute_daily_fwi(config, dataset)
+                )
         elif dataset.cffwis_version.upper() == 'FWI2025':
             raise NotImplementedError("FWI2025 computation is not yet implemented.")
+            # fire_weather_indices_dataframe_list.append(
+            #     compute_hourly_fwi(config, dataset)
+            #     )
         else:
             raise ValueError(f"Unrecognized CFFWIS version: {dataset.cffwis_version}")
 
-        logging.info(f"Success! Finished processing location {i}.")
+        logging.info(f"Success! Finished processing location {i} / {dataset.number_of_locations}.\n")
 
-        # Main loop; FWI calculations must be done iteratively over years.
-        # for year in range(config.start_year, config.end_year + 1):
-        #     logging.info("Processing year: %d", year)
-
-    
+    logging.info(f"✏️ Saving to directory {config.output_directory}...")
+    fire_weather_indices_dataframe = pd.concat(fire_weather_indices_dataframe_list, ignore_index=False)
+    save_fwi_data(fire_weather_indices_dataframe, config.output_directory, file_name="fwi_data.csv")

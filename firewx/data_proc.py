@@ -197,7 +197,7 @@ def apply_transform(config, variable, dataset):
 
     # Apply each transformation to the corresponding variable
     if transform is not None:
-        print(f"Applying transformation to {variable}: {transform}")
+        logging.info(f"Applying transformation to {variable}: {transform}")
         transform_func = eval("lambda x:" + transform)  # TODO: replace eval with a secure alternative (e.g numexpr)
         dataset[variable_name] = transform_func(dataset[variable_name])
 

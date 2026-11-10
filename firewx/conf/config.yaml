@@ -7,7 +7,7 @@
 # ------------------------------------------
 
 path_to_location_parameters: "/sapho/rpayne/firewx/example.csv"       # Path to CSV file containing lat/lons to calculate FWIs for, and other info as detailed in the README
-output_directory: "/path/to/output"
+output_directory: "/sapho/rpayne/output_firewx"
 lazy_load_data: false
 
 # ------------------------------------------
