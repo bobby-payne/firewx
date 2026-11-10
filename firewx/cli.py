@@ -1,10 +1,11 @@
+import os
 import logging
 
 from .configuration import get_config
 from .utils import initialize_logger, track_execution_time
 from .data_classes import DatasetModel
 from .fire_season import compute_fire_season_mask
-from .fwi_daily import compute_fwi_daily
+from .fwi_daily import compute_daily_fwi
 
 
 @track_execution_time
@@ -32,16 +33,14 @@ def main():
 
         logging.info("📊 Computing fire weather indices...")
         if dataset.cffwis_version.upper() == 'FWI1987':
-            dataset.fire_weather_indices = compute_fwi_daily(config, dataset)
+            dataset.fire_weather_indices = compute_daily_fwi(config, dataset)
         elif dataset.cffwis_version.upper() == 'FWI2025':
             raise NotImplementedError("FWI2025 computation is not yet implemented.")
         else:
             raise ValueError(f"Unrecognized CFFWIS version: {dataset.cffwis_version}")
 
-        logging.info(f"Success! Finished processing location {i}.")
+        logging.info(f"✏️ Writing to file at {config.output_directory}...")
+        dataset.save_fwi_data(f"{config.output_directory}")
 
-        # Main loop; FWI calculations must be done iteratively over years.
-        # for year in range(config.start_year, config.end_year + 1):
-        #     logging.info("Processing year: %d", year)
-
+        logging.info(f"Success! Finished processing location {i}.\n")
     

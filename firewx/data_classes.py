@@ -1,8 +1,10 @@
 import logging
+from os import path
 
 from .data_io import (
     open_location_parameters,
     get_wx_data,
+    save_fwi_data,
 )
 from .data_proc import (
     convert_dataset_UTC_to_LST,
@@ -114,3 +116,19 @@ class DatasetModel:
 
             # Set as attribute
             setattr(self, var_name, dataset)
+
+
+    def save_fwi_data(self, output_directory, file_name="fwi_data.csv", **kwargs):
+        """Save FWI data to a CSV file by calling `save_fwi_data` from the data_io module.
+
+        Args:
+            fwi_data (pd.DataFrame): DataFrame containing FWI data.
+            output_directory (str): Directory to save the output CSV file.
+            file_name (str, optional): Name of the output CSV file. Default is "fwi_data.csv".
+            **kwargs: Additional keyword arguments forwarded to
+                pd.DataFrame.to_csv().
+        """
+        if hasattr(self, "fire_weather_indices"):
+            save_fwi_data(self.fire_weather_indices, output_directory, file_name=file_name, **kwargs)
+        else:
+            raise RuntimeError("No fire weather index data available to save to file.")
