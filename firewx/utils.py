@@ -38,7 +38,10 @@ def track_execution_time(func):
         end_time = time.time()
         elapsed_time = end_time - start_time
 
-        logging.info(f"Finished in {elapsed_time/60:.2f} minutes.")
+        if elapsed_time < 60:
+            logging.info(f"Finished in {elapsed_time:.2f} seconds.")
+        else:
+            logging.info(f"Finished in {elapsed_time/60:.2f} minutes.")
 
         return result
         
