@@ -30,7 +30,7 @@ def calculate_daily_fwi(config, dataset_object):
         fwi_df_dict[year] = calculate_daily_fwi_for_year(config, dataset_object, year)
 
     # combine all yearly dataframes into a single dataframe
-    combined_fwi_df = pd.concat(fwi_df_dict.values(), keys=fwi_df_dict.keys(), names=['year', 'date'])
+    combined_fwi_df = pd.concat(fwi_df_dict.values())
     return combined_fwi_df
 
 
