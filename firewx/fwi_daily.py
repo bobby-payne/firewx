@@ -89,10 +89,9 @@ def compute_daily_fwi_for_year(config, dataset_object, year):
 
         if dt == first_active_day:
             ffmc, dmc, dc = get_moisture_code_starting_values(config, dataset_object, year)
-        else:
-            ffmc = fine_fuel_moisture_code(ffmc, temperature, relative_humidity, wind_speed, precipitation)
-            dmc = duff_moisture_code(dmc, temperature, relative_humidity, precipitation, latitude, dt.month)
-            dc = drought_code(dc, temperature, relative_humidity, precipitation, latitude, dt.month)
+        ffmc = fine_fuel_moisture_code(ffmc, temperature, relative_humidity, wind_speed, precipitation)
+        dmc = duff_moisture_code(dmc, temperature, relative_humidity, precipitation, latitude, dt.month)
+        dc = drought_code(dc, temperature, relative_humidity, precipitation, latitude, dt.month)
 
         isi = initial_spread_index(ffmc, wind_speed, fbp_mod=False)
         bui = buildup_index(dmc, dc)
