@@ -58,7 +58,7 @@ def compute_fire_season_mask(
             end_date = None
 
         # select the daily max temperature for the current year
-        air_temperature_daymax_for_year = air_temperature_daymax.sel(time=str(year))
+        air_temperature_daymax_for_year = air_temperature_daymax.sel({time_coordinate_name: str(year)})
 
         # get the masks for when the start and stop thresholds are being met
         masks_for_thresholds_met = compute_masks_for_thresholds_met(
@@ -74,6 +74,7 @@ def compute_fire_season_mask(
 
         # impose user-specified start and end dates for the fire season if provided
         fire_season_mask_daily = modify_fire_season_mask_with_user_dates(
+            config,
             fire_season_mask_daily,
             user_start_date=start_date,
             user_end_date=end_date,
@@ -126,6 +127,7 @@ def compute_masks_for_thresholds_met(config, air_temperature_2m_daymax):
     season_start_temperature = config.season_start_temp
     season_stop_temperature = config.season_stop_temp
     season_consecutive_days = config.season_consecutive_days
+    time_coordinate_name = config.time_coordinate_name
 
     # Create boolean masks for when the temperature exceeds the start threshold
     # and falls below the stop threshold.
@@ -134,13 +136,13 @@ def compute_masks_for_thresholds_met(config, air_temperature_2m_daymax):
 
     # Apply rolling window to check for when the threshold is met for the required consecutive days.
     mask_above_start_temp_consecutive = (
-        mask_above_start_temp.rolling(time=season_consecutive_days, min_periods=season_consecutive_days)
-        .sum().shift(time=1, fill_value=False) == season_consecutive_days
+        mask_above_start_temp.rolling({time_coordinate_name: season_consecutive_days}, min_periods=season_consecutive_days)
+        .sum().shift({time_coordinate_name: 1}, fill_value=False) == season_consecutive_days
     )
 
     mask_below_stop_temp_consecutive = (
-        mask_below_stop_temp.rolling(time=season_consecutive_days, min_periods=season_consecutive_days)
-        .sum().shift(time=1, fill_value=False) == season_consecutive_days
+        mask_below_stop_temp.rolling({time_coordinate_name: season_consecutive_days}, min_periods=season_consecutive_days)
+        .sum().shift({time_coordinate_name: 1}, fill_value=False) == season_consecutive_days
     )
 
     masks_for_thresholds_met = xr.Dataset({
@@ -250,6 +252,7 @@ def handle_shoulder_seasons(fire_season_mask_daily: xr.Dataset) -> xr.Dataset:
 
 
 def modify_fire_season_mask_with_user_dates(
+        config,
         fire_season_mask,
         user_start_date=None,
         user_end_date=None,
@@ -277,7 +280,8 @@ def modify_fire_season_mask_with_user_dates(
     """
 
     # relevant data
-    datetimes = pd.DatetimeIndex(fire_season_mask.time.values)
+    time_coordinate_name = config.time_coordinate_name
+    datetimes = pd.DatetimeIndex(fire_season_mask[time_coordinate_name].values)
     mask_values = fire_season_mask["fire_season_mask"].values.astype(bool)
     
     # get the time index of start and end of the fire season, according to the given mask

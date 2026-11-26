@@ -4,7 +4,6 @@ from os import path
 from .data_io import (
     open_location_parameters,
     get_wx_data,
-    save_fwi_data,
 )
 from .data_proc import (
     convert_dataset_UTC_to_LST,
@@ -63,6 +62,8 @@ class DatasetModel:
         Sets the processed datasets as attributes of the instance.
         """
 
+        time_coordinate_name = self.time_coordinate_name
+
         # check if latitude and longitude are set
         if not hasattr(self, "latitude") or not hasattr(self, "longitude"):
             raise ValueError("Latitude and longitude must be set before processing data for the location.")
@@ -106,7 +107,7 @@ class DatasetModel:
                 setattr(
                     self,
                     "air_temperature_2m_daymax",
-                    dataset.resample(time="1D").max()
+                    dataset.resample({time_coordinate_name: "1D"}).max()
                 )
 
             # Dataset is loaded into memory at this point

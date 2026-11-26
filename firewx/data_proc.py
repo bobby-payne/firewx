@@ -167,6 +167,7 @@ def convert_dataset_longitude_range(config, dataset, to_centered: bool = True):
     dataset = dataset.assign_coords({
         longitude_name: convert_longitude_range(dataset[longitude_name], to_centered=to_centered)
     })
+    dataset = dataset.sortby(longitude_name) #NOTE: WILL NEED TO BE CHANGED FOR 2D LON FIELDS
 
     return dataset
 
@@ -345,6 +346,6 @@ def convert_precipitation_hourly_to_daily(config, precipitation_hourly):
         label="right"
     ).sum(min_count=24)
 
-    precipitation_daily = precipitation_daily.isel(time=slice(None, -1))
+    precipitation_daily = precipitation_daily.isel({time_coordinate_name: slice(None, -1)})
 
     return precipitation_daily
